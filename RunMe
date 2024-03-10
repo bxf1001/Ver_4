@@ -1,0 +1,181 @@
+from time import sleep
+import sys
+import warnings
+warnings.simplefilter("ignore", UserWarning)
+sys.coinit_flags = 2
+import json
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QInputDialog
+from qt_material import apply_stylesheet
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QGridLayout
+from PyQt5.QtWidgets import QApplication, QLabel, QLineEdit, QPushButton, QGridLayout
+from whatsapp_up import WhatsAppUp
+from PyQt5.QtGui import QMovie
+
+class PhonePortal(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Phone Portal V4")
+        self.setGeometry(100, 100, 300, 500)
+        self.setup_ui()
+        self.show()
+
+    def setup_ui(self):
+        # Countdown Timer UI
+        self.label = QPushButton("//TIMER//", self)
+        self.label.setGeometry(100, 50, 200, 50)
+        self.label.setProperty('class', 'warning')
+        self.label.setFont(QFont('Times', 15))
+        
+        self.loading_label = QLabel(self)
+        self.loading_label.setGeometry(150, 0, 500, 500)  # Adjust position and size
+        self.loading_movie = QMovie("loading.gif")  # Replace with your actual GIF file
+        self.loading_label.setMovie(self.loading_movie)
+
+        self.user_id_input = QLineEdit(self) 
+        self.user_id_input.setGeometry(125, 350, 150, 40)
+
+        self.search_button = QPushButton("Search", self)
+        self.search_button.setGeometry(125, 400, 150, 40)
+        self.search_button.clicked.connect(self.search_contact_numbers)
+        self.search_button.setShortcut(Qt.Key_Enter)
+
+        self.set_time_button = QPushButton("Set Time (s)", self)
+        self.set_time_button.clicked.connect(self.get_seconds)
+        
+
+        self.pause_button = QPushButton("End Call", self)
+        self.pause_button.setProperty('class', 'danger')
+        self.pause_button.setGeometry(125, 120, 150, 40)
+        self.pause_button.clicked.connect(self.pause_action)
+        self.pause_button.setShortcut(Qt.Key_Space)
+
+        self.reset_button = QPushButton("Reset", self)
+        self.reset_button.setGeometry(125, 170, 150, 40)
+        self.reset_button.clicked.connect(self.reset_action)
+        
+        self.stop_button = QPushButton("Stop", self)
+        self.stop_button.setGeometry(125, 220, 150, 40)
+        self.stop_button.clicked.connect(self.stoper_action)
+        
+        # User Contacts UI
+
+        self.wa = WhatsAppUp(self)
+        
+
+        self.grid = QGridLayout(self)
+        self.grid.addWidget(self.label, 1, 1)
+        self.grid.addWidget(self.user_id_input, 2, 1)
+        self.grid.addWidget(self.search_button, 3, 1)
+        self.grid.addWidget(self.pause_button, 8, 1)
+        self.grid.addWidget(self.reset_button, 9, 1)
+        self.grid.addWidget(self.stop_button,10,1)
+        self.grid.addWidget(self.set_time_button,11,1)
+        
+        self.contact_numbers = [None] * 3
+        for i in range(3):
+            label_num = QPushButton(self)
+            label_num.setGeometry(100, 200 + i * 50, 200, 50)
+            label_num.setProperty('class', 'success')
+            label_num.setFont(QFont('Times', 15))
+            self.contact_numbers[i] = label_num
+            self.grid.addWidget(label_num, 4 + i, 1)
+
+        
+        #self.search_button.setFocusPolicy(Qt.NoFocus)
+
+        # Initialize countdown timer
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.show_time)
+        self.count = 720  # 12 minutes in seconds
+        self.start = False
+        self.timer.start(1000)  # Update every second
+
+    def get_seconds(self):
+        self.timer.start(1000)   # Start the timer if not already started
+        second, done = QInputDialog.getInt(self, 'Seconds', 'Enter Minutes:')
+        if done:
+            self.count = second * 60
+            self.update_timer()
+
+
+    def stoper_action(self):
+        self.wa.stop_action()
+
+
+
+    def search_contact_numbers(self):
+        self.loading_movie.start()
+        user_id = self.user_id_input.text()
+        try:
+            with open("user_data.json", "r") as json_file:
+                data = json.load(json_file)
+                if user_id in data:
+                    contact_data = data[user_id]
+                    for i, number in enumerate(contact_data.values()):
+                        self.contact_numbers[i].setText(number)
+                        self.contact_numbers[i].mousePressEvent = self.create_contact_function(number)
+                else:
+                    for label in self.contact_numbers:
+                        label.setText("N/A")
+        except FileNotFoundError:
+            print("user_data.json not found. Please create the file.")
+
+
+    
+    def update_timer(self):
+        minutes = self.count // 60
+        seconds = self.count % 60
+        self.label.setText(f"{minutes:02}:{seconds:02}")
+        self.count -= 1
+
+    def show_time(self):
+        if self.start:
+            if self.count == 0:
+                self.start = False
+                self.wa.run_method_post()
+                self.label.setText("Completed !!!!")
+            else:
+                self.update_timer()
+
+    def reset_action(self):
+        self.loading_movie.stop()
+        self.start = False
+        self.count = 720
+        self.label.setText("")
+
+    def pause_action(self):
+        self.start = False
+        self.wa.run_method_post()
+
+    def create_contact_function(self, number):
+        def on_contact_click(event):
+            self.wa = WhatsAppUp(number)
+            self.wa.run_method_pre()
+            sleep(1)
+            self.start = True      
+            print(f"Contact {number} clicked!")
+
+        return on_contact_click
+    
+
+    def on_key_press(self, event):
+        if event.key() == Qt.Key_Space:
+            self.start = False
+            self.wa.run_method_post()
+            print("You broke the process by pressing Space!")
+        else:
+            # Call the base class implementation to handle other key events
+            super().keyPressEvent(event)
+
+    # ... (other methods)
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    apply_stylesheet(app, theme='dark_blue.xml', extra={'round': True})
+    app.processEvents()
+    app.setStyle('Fusion')
+    window = PhonePortal()
+    sys.exit(app.exec_())
