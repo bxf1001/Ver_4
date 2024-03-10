@@ -1,10 +1,9 @@
 import sys
 import json
-import os
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit
 from qt_material import apply_stylesheet
 
-class AnotherWindow(QWidget):
+class AddUser(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Add User")
@@ -24,10 +23,10 @@ class AnotherWindow(QWidget):
 
         # Create submit button
         self.submit_button = QPushButton("Submit", self)
-        self.submit_button.clicked.connect(self.store_data) # Connect the clicked signal to the method
+        self.submit_button.clicked.connect(self.store_data)
 
         # Apply Material theme
-        apply_stylesheet(app, theme='dark_teal.xml', extra={'round': True})
+        
 
         # Set layout
         layout = QVBoxLayout()
@@ -44,41 +43,27 @@ class AnotherWindow(QWidget):
         self.setLayout(layout)
 
     def store_data(self):
-        # This method will store the data from the input fields into a JSON file and close the window
-        data = {} # Create an empty dictionary to store the data
-        data["user_id"] = self.user_id_input.text() # Get the text from the user id input field and store it in the dictionary
-        data["value1"] = self.value1_input.text() # Get the text from the value1 input field and store it in the dictionary
-        data["value2"] = self.value2_input.text() # Get the text from the value2 input field and store it in the dictionary
-        data["value3"] = self.value3_input.text() # Get the text from the value3 input field and store it in the dictionary
+        user_id = self.user_id_input.text()
+        value1 = self.value1_input.text()
+        value2 = self.value2_input.text()
+        value3 = self.value3_input.text()
 
-        # Check if the data file exists
-        file_name = "data.json"
-        if os.path.exists(file_name):
-            # Read the existing data from the file
-            with open(file_name, "r") as f:
-                existing_data = json.load(f)
-            # Check if the user id is already in the file
-            if data["user_id"] in existing_data:
-                # Create a warning message box
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Warning)
-                msg.setWindowTitle("User already exists")
-                msg.setText("The user ID you entered already exists in the data file. Please enter a different user ID.")
-                msg.setStandardButtons(QMessageBox.Ok)
-                # Show the message box and wait for the user to click the button
-                msg.exec_()
-                # Return from the method without writing the data or closing the window
-                return
+        try:
+            with open('user_data.json', 'r') as f:
+                user_data = json.load(f)
+        except FileNotFoundError:
+            user_data = {}
+
+        if user_id in user_data:
+            print("User already exists.")
         else:
-            # Create an empty dictionary for the existing data
-            existing_data = {}
+            user_data[user_id] = {'1': value1, '2': value2, '3': value3}
+            with open('user_data.json', 'w') as f:
+                json.dump(user_data, f,indent=4)
 
-        # Add the new data to the existing data
-        existing_data[data["user_id"]] = data
-
-        # Write the updated data to the file
-        with open(file_name, "w") as f:
-            json.dump(existing_data, f, indent=4)
-
-        # Close the window
-        self.close()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    w = AddUser()
+    apply_stylesheet(app, theme='dark_teal.xml')
+    w.show()
+    sys.exit(app.exec_())
