@@ -1,6 +1,7 @@
 import sys
 import json
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit 
 from qt_material import apply_stylesheet
 
 class AddUser(QWidget):
@@ -24,7 +25,7 @@ class AddUser(QWidget):
         # Create submit button
         self.submit_button = QPushButton("Submit", self)
         self.submit_button.clicked.connect(self.store_data)
-
+        self.submit_button.setShortcut(Qt.Key_Enter)
         # Apply Material theme
         
 
