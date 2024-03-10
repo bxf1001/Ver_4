@@ -27,7 +27,7 @@ class AnotherWindow(QWidget):
         self.submit_button.clicked.connect(self.store_data) # Connect the clicked signal to the method
 
         # Apply Material theme
-        apply_stylesheet(self, theme='dark_teal.xml')
+        apply_stylesheet(app, theme='dark_teal.xml', extra={'round': True})
 
         # Set layout
         layout = QVBoxLayout()
